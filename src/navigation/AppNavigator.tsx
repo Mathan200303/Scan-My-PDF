@@ -48,8 +48,8 @@ export const AppNavigator = () => {
         }}
       >
         <Stack.Screen name="Splash" component={SplashScreen} />
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen name="MainTabs" component={BottomTabs} />
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ animation: 'fade' }} />
+        <Stack.Screen name="MainTabs" component={BottomTabs} options={{ animation: 'fade' }} />
 
         {/* Scanner Flow */}
         <Stack.Screen

@@ -22,9 +22,9 @@ interface SplashScreenProps {
 export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
 
-  // Animation values
+  // Animation values - Initialized for slow-motion reveal
   const bgOrbAnim = useRef(new Animated.Value(0)).current;
-  const logoScale = useRef(new Animated.Value(0.6)).current;
+  const logoScale = useRef(new Animated.Value(0.75)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const frameExpand = useRef(new Animated.Value(0)).current;
   const radarWave1 = useRef(new Animated.Value(0)).current;
@@ -32,9 +32,9 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   const scanLineAnim = useRef(new Animated.Value(0)).current;
   const shimmerAnim = useRef(new Animated.Value(-120)).current;
   const textFade = useRef(new Animated.Value(0)).current;
-  const textSlide = useRef(new Animated.Value(24)).current;
+  const textSlide = useRef(new Animated.Value(20)).current;
   const pillsFade = useRef(new Animated.Value(0)).current;
-  const pillsSlide = useRef(new Animated.Value(16)).current;
+  const pillsSlide = useRef(new Animated.Value(14)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
   const exitScale = useRef(new Animated.Value(1)).current;
   const exitOpacity = useRef(new Animated.Value(1)).current;
@@ -83,23 +83,24 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       ])
     ).start();
 
-    // 3. Holographic Scanner Brackets Expansion + Logo Pop
+    // 3. Slow-Motion Holographic Scanner Brackets Expansion + Logo Pop
     Animated.parallel([
       Animated.timing(logoOpacity, {
         toValue: 1,
-        duration: 500,
+        duration: 800,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.spring(logoScale, {
         toValue: 1,
-        friction: 5,
-        tension: 40,
+        friction: 7,
+        tension: 25,
         useNativeDriver: true,
       }),
       Animated.spring(frameExpand, {
         toValue: 1,
-        friction: 6,
-        tension: 35,
+        friction: 7,
+        tension: 25,
         useNativeDriver: true,
       }),
     ]).start();
@@ -110,13 +111,13 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
         Animated.sequence([
           Animated.timing(scanLineAnim, {
             toValue: 124,
-            duration: 850,
+            duration: 900,
             easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.timing(scanLineAnim, {
             toValue: 0,
-            duration: 850,
+            duration: 900,
             easing: Easing.inOut(Easing.quad),
             useNativeDriver: true,
           }),
@@ -138,32 +139,34 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       ])
     ).start();
 
-    // 5. Staggered Typography & Feature Badges Reveal
+    // 5. Staggered Typography & Feature Badges Reveal (Smooth Slow-Motion)
     Animated.sequence([
-      Animated.delay(300),
+      Animated.delay(280),
       Animated.parallel([
         Animated.timing(textFade, {
           toValue: 1,
-          duration: 500,
+          duration: 650,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        Animated.timing(textSlide, {
+        Animated.spring(textSlide, {
           toValue: 0,
-          duration: 500,
-          easing: Easing.out(Easing.back(1.4)),
+          friction: 7,
+          tension: 25,
           useNativeDriver: true,
         }),
       ]),
       Animated.parallel([
         Animated.timing(pillsFade, {
           toValue: 1,
-          duration: 450,
+          duration: 600,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        Animated.timing(pillsSlide, {
+        Animated.spring(pillsSlide, {
           toValue: 0,
-          duration: 450,
-          easing: Easing.out(Easing.ease),
+          friction: 7,
+          tension: 25,
           useNativeDriver: true,
         }),
       ]),
@@ -172,28 +175,29 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
     // 6. Sleek Loading Progress Line
     Animated.timing(progressAnim, {
       toValue: 1,
-      duration: 1700,
+      duration: 1800,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: false,
     }).start();
 
-    // 7. App Initialization & Seamless Screen Transition
+    // 7. App Initialization & Cinematic Slow Fade-out to Dashboard
     const initApp = async () => {
       await FileService.initDirectories();
       const settings = await SettingsRepository.getSettings();
 
       setTimeout(() => {
-        // Smooth zoom-fade exit transition
+        // Slow-motion cinematic fade-out transition (750ms)
         Animated.parallel([
           Animated.timing(exitScale, {
-            toValue: 1.08,
-            duration: 250,
-            easing: Easing.in(Easing.ease),
+            toValue: 1.04,
+            duration: 750,
+            easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.timing(exitOpacity, {
             toValue: 0,
-            duration: 250,
+            duration: 750,
+            easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
         ]).start(() => {
@@ -203,7 +207,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
             navigation.replace('Onboarding');
           }
         });
-      }, 2000);
+      }, 1600);
     };
 
     initApp();
