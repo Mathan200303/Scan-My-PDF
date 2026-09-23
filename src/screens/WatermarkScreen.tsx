@@ -10,7 +10,8 @@ import {
   FlatList,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Stamp, FolderOpen, Check } from 'lucide-react-native';
+import { Stamp, FolderOpen, Check, Smartphone, X, FileText } from 'lucide-react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import { useTheme } from '../context/ThemeContext';
 import { Spacing, BorderRadius } from '../constants/theme';
 import { Header } from '../components/Header';
@@ -36,13 +37,45 @@ export const WatermarkScreen: React.FC<{ navigation: any }> = ({ navigation }) =
   const [pickerVisible, setPickerVisible] = useState(false);
   const [availableDocs, setAvailableDocs] = useState<DocumentItem[]>([]);
 
+  const handlePickFromPhone = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+
+      if (!res.canceled && res.assets && res.assets.length > 0) {
+        const file = res.assets[0];
+        setLoading(true);
+        try {
+          const count = await PdfService.getPdfPageCount(file.uri);
+          const size = file.size || (await FileService.getFileSizeBytes(file.uri));
+          const doc: DocumentItem = {
+            id: `phone_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            title: file.name.replace(/\.pdf$/i, ''),
+            uri: file.uri,
+            type: 'pdf',
+            pageCount: count,
+            fileSize: size,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          setSelectedDoc(doc);
+          setPickerVisible(false);
+        } catch (err) {
+          Alert.alert('Invalid PDF', 'Could not open or parse the selected PDF.');
+        } finally {
+          setLoading(false);
+        }
+      }
+    } catch (e) {
+      console.error('File pick error', e);
+    }
+  };
+
   const handleOpenPicker = async () => {
     const list = await DocumentRepository.getAll();
     const pdfs = list.filter((d) => d.type === 'pdf');
-    if (pdfs.length === 0) {
-      Alert.alert('No PDFs Found', 'Create or scan a PDF document first.');
-      return;
-    }
     setAvailableDocs(pdfs);
     setPickerVisible(true);
   };
@@ -115,22 +148,42 @@ export const WatermarkScreen: React.FC<{ navigation: any }> = ({ navigation }) =
         contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 24) + 60 }]}
       >
         {/* Selected Document Indicator */}
-        <TouchableOpacity
-          onPress={handleOpenPicker}
-          style={[styles.docSelector, { backgroundColor: colors.card, borderColor: colors.border }]}
-        >
-          <FolderOpen size={22} color={colors.primary} style={{ marginRight: 10 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.docSelectorTitle, { color: colors.text }]} numberOfLines={1}>
-              {selectedDoc ? selectedDoc.title : 'Select Target PDF Document'}
-            </Text>
-            {selectedDoc ? (
-              <Text style={[styles.docSelectorSub, { color: colors.textSecondary }]}>
+        {selectedDoc ? (
+          <View style={[styles.selectedDocCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+            <View style={[styles.docIconBox, { backgroundColor: colors.primaryLight }]}>
+              <FileText size={22} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, marginHorizontal: 10 }}>
+              <Text style={[styles.selectedDocTitle, { color: colors.text }]} numberOfLines={1}>
+                {selectedDoc.title}
+              </Text>
+              <Text style={[styles.selectedDocMeta, { color: colors.textSecondary }]}>
                 {selectedDoc.pageCount} pages • {FileService.formatFileSize(selectedDoc.fileSize)}
               </Text>
-            ) : null}
+            </View>
+            <TouchableOpacity onPress={() => setSelectedDoc(null)} style={styles.removeDocBtn}>
+              <X size={18} color={colors.danger} />
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        ) : (
+          <View style={styles.dualPickerRow}>
+            <TouchableOpacity
+              onPress={handlePickFromPhone}
+              style={[styles.pickBtnHalf, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+            >
+              <Smartphone size={18} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={[styles.pickBtnText, { color: colors.primary }]}>Phone Files</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleOpenPicker}
+              style={[styles.pickBtnHalf, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <FolderOpen size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+              <Text style={[styles.pickBtnText, { color: colors.text }]}>App Scans</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Live Visual Preview */}
         <Text style={[styles.sectionHeading, { color: colors.textSecondary, marginTop: Spacing.lg }]}>
@@ -323,27 +376,55 @@ export const WatermarkScreen: React.FC<{ navigation: any }> = ({ navigation }) =
         <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
           <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Select Target PDF</Text>
-            <FlatList
-              data={availableDocs}
-              keyExtractor={(item) => item.id}
-              style={{ maxHeight: 320 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    setSelectedDoc(item);
-                    setPickerVisible(false);
-                  }}
-                  style={[styles.pickerRow, { borderBottomColor: colors.border }]}
-                >
-                  <Text style={[styles.pickerTitleText, { color: colors.text }]} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text style={[styles.pickerSubText, { color: colors.textSecondary }]}>
-                    {item.pageCount} pages • {FileService.formatFileSize(item.fileSize)}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
+
+            {/* Direct Phone Storage Button at top of modal */}
+            <TouchableOpacity
+              onPress={handlePickFromPhone}
+              style={[styles.modalPhoneBtn, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+            >
+              <Smartphone size={18} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={[styles.modalPhoneBtnText, { color: colors.primary }]}>
+                Browse Phone Storage (Downloads / Files)
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={[styles.modalSubheading, { color: colors.textSecondary }]}>
+              OR SELECT FROM APP SCANS:
+            </Text>
+
+            {availableDocs.length > 0 ? (
+              <FlatList
+                data={availableDocs}
+                keyExtractor={(item) => item.id}
+                style={{ maxHeight: 220 }}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedDoc(item);
+                      setPickerVisible(false);
+                    }}
+                    style={[styles.pickerRow, { borderBottomColor: colors.border }]}
+                  >
+                    <FileText size={16} color={colors.primary} style={{ marginRight: 10 }} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.pickerTitleText, { color: colors.text }]} numberOfLines={1}>
+                        {item.title}
+                      </Text>
+                      <Text style={[styles.pickerSubText, { color: colors.textSecondary }]}>
+                        {item.pageCount} pages • {FileService.formatFileSize(item.fileSize)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              />
+            ) : (
+              <View style={styles.emptyScansBox}>
+                <Text style={[styles.emptyScansText, { color: colors.textMuted }]}>
+                  No scanned documents in app yet.
+                </Text>
+              </View>
+            )}
+
             <TouchableOpacity
               onPress={() => setPickerVisible(false)}
               style={styles.cancelBtn}
@@ -499,6 +580,74 @@ const styles = StyleSheet.create({
   cancelBtn: {
     alignItems: 'center',
     paddingTop: Spacing.lg,
+  },
+  dualPickerRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  pickBtnHalf: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+  },
+  pickBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  selectedDocCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+  },
+  docIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedDocTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  selectedDocMeta: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  removeDocBtn: {
+    padding: Spacing.xs,
+  },
+  modalPhoneBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    marginBottom: Spacing.md,
+  },
+  modalPhoneBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  modalSubheading: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginBottom: Spacing.xs,
+  },
+  emptyScansBox: {
+    paddingVertical: Spacing.lg,
+    alignItems: 'center',
+  },
+  emptyScansText: {
+    fontSize: 12,
   },
 });
 

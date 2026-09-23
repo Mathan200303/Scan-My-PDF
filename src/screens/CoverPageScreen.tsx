@@ -16,7 +16,11 @@ import {
   FilePlus2,
   FolderOpen,
   Sparkles,
+  Smartphone,
+  X,
+  FileText,
 } from 'lucide-react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import { useTheme } from '../context/ThemeContext';
 import { Spacing, BorderRadius } from '../constants/theme';
 import { Header } from '../components/Header';
@@ -45,6 +49,42 @@ export const CoverPageScreen: React.FC<{ navigation: any }> = ({ navigation }) =
   const [targetPdf, setTargetPdf] = useState<DocumentItem | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [availableDocs, setAvailableDocs] = useState<DocumentItem[]>([]);
+
+  const handlePickFromPhone = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+
+      if (!res.canceled && res.assets && res.assets.length > 0) {
+        const file = res.assets[0];
+        setLoading(true);
+        try {
+          const count = await PdfService.getPdfPageCount(file.uri);
+          const size = file.size || (await FileService.getFileSizeBytes(file.uri));
+          const doc: DocumentItem = {
+            id: `phone_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            title: file.name.replace(/\.pdf$/i, ''),
+            uri: file.uri,
+            type: 'pdf',
+            pageCount: count,
+            fileSize: size,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          setTargetPdf(doc);
+          setPickerVisible(false);
+        } catch (err) {
+          Alert.alert('Invalid PDF', 'Could not open or parse the selected PDF.');
+        } finally {
+          setLoading(false);
+        }
+      }
+    } catch (e) {
+      console.error('File pick error', e);
+    }
+  };
 
   const handleOpenPicker = async () => {
     const list = await DocumentRepository.getAll();
@@ -255,17 +295,45 @@ export const CoverPageScreen: React.FC<{ navigation: any }> = ({ navigation }) =
 
         {/* Attach Option */}
         <Text style={[styles.sectionHeading, { color: colors.textSecondary, marginTop: Spacing.lg }]}>
-          TARGET DOCUMENT
+          TARGET DOCUMENT (OPTIONAL)
         </Text>
-        <TouchableOpacity
-          onPress={handleOpenPicker}
-          style={[styles.attachBox, { backgroundColor: colors.card, borderColor: colors.border }]}
-        >
-          <FolderOpen size={20} color={colors.primary} style={{ marginRight: 8 }} />
-          <Text style={[styles.attachText, { color: targetPdf ? colors.text : colors.textSecondary }]}>
-            {targetPdf ? `Attach to: ${targetPdf.title}` : 'Choose PDF to prepend cover (Optional)'}
-          </Text>
-        </TouchableOpacity>
+
+        {targetPdf ? (
+          <View style={[styles.selectedDocCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+            <View style={[styles.docIconBox, { backgroundColor: colors.primaryLight }]}>
+              <FileText size={22} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1, marginHorizontal: 10 }}>
+              <Text style={[styles.selectedDocTitle, { color: colors.text }]} numberOfLines={1}>
+                {targetPdf.title}
+              </Text>
+              <Text style={[styles.selectedDocMeta, { color: colors.textSecondary }]}>
+                {targetPdf.pageCount} pages • {FileService.formatFileSize(targetPdf.fileSize)}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => setTargetPdf(null)} style={styles.removeDocBtn}>
+              <X size={18} color={colors.danger} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.dualPickerRow}>
+            <TouchableOpacity
+              onPress={handlePickFromPhone}
+              style={[styles.pickBtnHalf, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+            >
+              <Smartphone size={18} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={[styles.pickBtnText, { color: colors.primary }]}>Phone Files</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleOpenPicker}
+              style={[styles.pickBtnHalf, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <FolderOpen size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+              <Text style={[styles.pickBtnText, { color: colors.text }]}>App Scans</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Buttons */}
         <View style={styles.actionsContainer}>
@@ -294,32 +362,60 @@ export const CoverPageScreen: React.FC<{ navigation: any }> = ({ navigation }) =
         <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
           <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Select Target PDF</Text>
-            <FlatList
-              data={availableDocs}
-              keyExtractor={(item) => item.id}
-              style={{ maxHeight: 300 }}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    setTargetPdf(item);
-                    setPickerVisible(false);
-                  }}
-                  style={[styles.pickerRow, { borderBottomColor: colors.border }]}
-                >
-                  <Text style={[styles.pickerTitleText, { color: colors.text }]} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
+
+            {/* Direct Phone Storage Button at top of modal */}
             <TouchableOpacity
-              onPress={() => {
-                setTargetPdf(null);
-                setPickerVisible(false);
-              }}
+              onPress={handlePickFromPhone}
+              style={[styles.modalPhoneBtn, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+            >
+              <Smartphone size={18} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={[styles.modalPhoneBtnText, { color: colors.primary }]}>
+                Browse Phone Storage (Downloads / Files)
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={[styles.modalSubheading, { color: colors.textSecondary }]}>
+              OR SELECT FROM APP SCANS:
+            </Text>
+
+            {availableDocs.length > 0 ? (
+              <FlatList
+                data={availableDocs}
+                keyExtractor={(item) => item.id}
+                style={{ maxHeight: 220 }}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setTargetPdf(item);
+                      setPickerVisible(false);
+                    }}
+                    style={[styles.pickerRow, { borderBottomColor: colors.border }]}
+                  >
+                    <FileText size={16} color={colors.primary} style={{ marginRight: 10 }} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.pickerTitleText, { color: colors.text }]} numberOfLines={1}>
+                        {item.title}
+                      </Text>
+                      <Text style={[styles.pickerMetaText, { color: colors.textSecondary }]}>
+                        {item.pageCount} pages • {FileService.formatFileSize(item.fileSize)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              />
+            ) : (
+              <View style={styles.emptyScansBox}>
+                <Text style={[styles.emptyScansText, { color: colors.textMuted }]}>
+                  No scanned documents in app yet.
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              onPress={() => setPickerVisible(false)}
               style={styles.cancelBtn}
             >
-              <Text style={{ color: colors.danger, fontWeight: '600' }}>Clear Selection</Text>
+              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -429,6 +525,78 @@ const styles = StyleSheet.create({
   cancelBtn: {
     alignItems: 'center',
     paddingTop: Spacing.lg,
+  },
+  dualPickerRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  pickBtnHalf: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+  },
+  pickBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  selectedDocCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+  },
+  docIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedDocTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  selectedDocMeta: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  removeDocBtn: {
+    padding: Spacing.xs,
+  },
+  modalPhoneBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    marginBottom: Spacing.md,
+  },
+  modalPhoneBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  modalSubheading: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginBottom: Spacing.xs,
+  },
+  pickerMetaText: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  emptyScansBox: {
+    paddingVertical: Spacing.lg,
+    alignItems: 'center',
+  },
+  emptyScansText: {
+    fontSize: 12,
   },
 });
 
