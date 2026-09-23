@@ -24,15 +24,15 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
 
   // Animation values - Initialized for slow-motion reveal
   const bgOrbAnim = useRef(new Animated.Value(0)).current;
-  const logoScale = useRef(new Animated.Value(0.75)).current;
+  const logoScale = useRef(new Animated.Value(0.88)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const frameExpand = useRef(new Animated.Value(0)).current;
   const radarWave1 = useRef(new Animated.Value(0)).current;
   const radarWave2 = useRef(new Animated.Value(0)).current;
   const scanLineAnim = useRef(new Animated.Value(0)).current;
-  const shimmerAnim = useRef(new Animated.Value(-120)).current;
+  const shimmerAnim = useRef(new Animated.Value(-140)).current;
   const textFade = useRef(new Animated.Value(0)).current;
-  const textSlide = useRef(new Animated.Value(20)).current;
+  const textSlide = useRef(new Animated.Value(18)).current;
   const pillsFade = useRef(new Animated.Value(0)).current;
   const pillsSlide = useRef(new Animated.Value(14)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -40,24 +40,28 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   const exitOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // 1. Ambient Background Glow Rotation
+    // Standard smooth cubic-bezier curve (ease-out)
+    const smoothEaseOut = Easing.bezier(0.16, 1, 0.3, 1);
+    const smoothEaseInOut = Easing.bezier(0.42, 0, 0.58, 1);
+
+    // 1. Ambient Background Glow Rotation (Slow and relaxing)
     Animated.loop(
       Animated.timing(bgOrbAnim, {
         toValue: 1,
-        duration: 4000,
+        duration: 8000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
 
-    // 2. Radar Wave Expansion
+    // 2. Slow Ambient Radar Wave Expansion
     Animated.loop(
       Animated.parallel([
         Animated.sequence([
           Animated.timing(radarWave1, {
             toValue: 1,
-            duration: 1800,
-            easing: Easing.out(Easing.ease),
+            duration: 2400,
+            easing: Easing.out(Easing.sin),
             useNativeDriver: true,
           }),
           Animated.timing(radarWave1, {
@@ -67,11 +71,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
           }),
         ]),
         Animated.sequence([
-          Animated.delay(900),
+          Animated.delay(1200),
           Animated.timing(radarWave2, {
             toValue: 1,
-            duration: 1800,
-            easing: Easing.out(Easing.ease),
+            duration: 2400,
+            easing: Easing.out(Easing.sin),
             useNativeDriver: true,
           }),
           Animated.timing(radarWave2, {
@@ -83,55 +87,56 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       ])
     ).start();
 
-    // 3. Slow-Motion Holographic Scanner Brackets Expansion + Logo Pop
+    // 3. Majestic Slow-Motion Logo Entrance & Viewfinder Brackets
     Animated.parallel([
       Animated.timing(logoOpacity, {
         toValue: 1,
-        duration: 800,
-        easing: Easing.out(Easing.cubic),
+        duration: 850,
+        easing: smoothEaseOut,
         useNativeDriver: true,
       }),
-      Animated.spring(logoScale, {
+      Animated.timing(logoScale, {
         toValue: 1,
-        friction: 7,
-        tension: 25,
+        duration: 1400,
+        easing: smoothEaseOut,
         useNativeDriver: true,
       }),
-      Animated.spring(frameExpand, {
+      Animated.timing(frameExpand, {
         toValue: 1,
-        friction: 7,
-        tension: 25,
+        duration: 1400,
+        easing: smoothEaseOut,
         useNativeDriver: true,
       }),
     ]).start();
 
-    // 4. Laser Scan Beam & Shimmer Sweep (Continuous)
+    // 4. Silky-Smooth Laser Scan Beam & Shimmer Sweep
     Animated.loop(
       Animated.parallel([
         Animated.sequence([
           Animated.timing(scanLineAnim, {
             toValue: 124,
-            duration: 900,
-            easing: Easing.inOut(Easing.quad),
+            duration: 1400,
+            easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
           Animated.timing(scanLineAnim, {
             toValue: 0,
-            duration: 900,
-            easing: Easing.inOut(Easing.quad),
+            duration: 1400,
+            easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
         ]),
         Animated.sequence([
+          Animated.delay(600),
           Animated.timing(shimmerAnim, {
-            toValue: 140,
-            duration: 1200,
-            easing: Easing.inOut(Easing.ease),
+            toValue: 160,
+            duration: 1500,
+            easing: smoothEaseInOut,
             useNativeDriver: true,
           }),
-          Animated.delay(500),
+          Animated.delay(800),
           Animated.timing(shimmerAnim, {
-            toValue: -140,
+            toValue: -160,
             duration: 0,
             useNativeDriver: true,
           }),
@@ -139,78 +144,93 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       ])
     ).start();
 
-    // 5. Staggered Typography & Feature Badges Reveal (Smooth Slow-Motion)
+    // 5. Staggered Elegant Typography & Feature Badges
     Animated.sequence([
-      Animated.delay(280),
+      Animated.delay(450),
       Animated.parallel([
         Animated.timing(textFade, {
           toValue: 1,
-          duration: 650,
-          easing: Easing.out(Easing.cubic),
+          duration: 900,
+          easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
-        Animated.spring(textSlide, {
+        Animated.timing(textSlide, {
           toValue: 0,
-          friction: 7,
-          tension: 25,
+          duration: 900,
+          easing: smoothEaseOut,
           useNativeDriver: true,
         }),
       ]),
       Animated.parallel([
         Animated.timing(pillsFade, {
           toValue: 1,
-          duration: 600,
-          easing: Easing.out(Easing.cubic),
+          duration: 900,
+          easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
-        Animated.spring(pillsSlide, {
+        Animated.timing(pillsSlide, {
           toValue: 0,
-          friction: 7,
-          tension: 25,
+          duration: 900,
+          easing: smoothEaseOut,
           useNativeDriver: true,
         }),
       ]),
     ]).start();
 
-    // 6. Sleek Loading Progress Line
+    // 6. Smooth Hardware-Accelerated Progress Indicator
     Animated.timing(progressAnim, {
       toValue: 1,
-      duration: 1800,
-      easing: Easing.inOut(Easing.ease),
-      useNativeDriver: false,
+      duration: 2800,
+      easing: smoothEaseInOut,
+      useNativeDriver: true,
     }).start();
 
-    // 7. App Initialization & Cinematic Slow Fade-out to Dashboard
-    const initApp = async () => {
-      await FileService.initDirectories();
-      const settings = await SettingsRepository.getSettings();
+    // 7. App Initialization & Cinematic Slow Dissolve Transition
+    let isCancelled = false;
 
-      setTimeout(() => {
-        // Slow-motion cinematic fade-out transition (750ms)
+    const runStartupFlow = async () => {
+      try {
+        const [_, settings] = await Promise.all([
+          FileService.initDirectories(),
+          SettingsRepository.getSettings(),
+          new Promise((resolve) => setTimeout(resolve, 2900)),
+        ]);
+
+        if (isCancelled) return;
+
+        // Cinematic slow-motion fade out & gentle zoom
         Animated.parallel([
           Animated.timing(exitScale, {
-            toValue: 1.04,
-            duration: 750,
-            easing: Easing.out(Easing.quad),
+            toValue: 1.05,
+            duration: 900,
+            easing: smoothEaseInOut,
             useNativeDriver: true,
           }),
           Animated.timing(exitOpacity, {
             toValue: 0,
-            duration: 750,
-            easing: Easing.inOut(Easing.ease),
+            duration: 900,
+            easing: smoothEaseInOut,
             useNativeDriver: true,
           }),
         ]).start(() => {
-          if (settings.onboardingCompleted) {
+          if (settings?.onboardingCompleted) {
             navigation.replace('MainTabs');
           } else {
             navigation.replace('Onboarding');
           }
         });
-      }, 1600);
+      } catch (err) {
+        if (!isCancelled) {
+          navigation.replace('MainTabs');
+        }
+      }
     };
 
-    initApp();
+    runStartupFlow();
+
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
   const orbRotate = bgOrbAnim.interpolate({
@@ -241,9 +261,9 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
     outputRange: [-18, 0],
   });
 
-  const progressWidth = progressAnim.interpolate({
+  const progressTranslateX = progressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
+    outputRange: [-140, 0],
   });
 
   return (
@@ -452,7 +472,14 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
       <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom, 22) }]}>
         {/* Futuristic Mini Progress Bar */}
         <View style={styles.progressBarTrack}>
-          <Animated.View style={[styles.progressBarFill, { width: progressWidth }]} />
+          <Animated.View
+            style={[
+              styles.progressBarFill,
+              {
+                transform: [{ translateX: progressTranslateX }],
+              },
+            ]}
+          />
         </View>
 
         <Text style={styles.privacyCaption}>
@@ -669,6 +696,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   progressBarFill: {
+    width: 140,
     height: '100%',
     backgroundColor: '#38BDF8',
     borderRadius: 2,
