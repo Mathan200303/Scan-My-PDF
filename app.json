@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "Scan My PDF",
+    "slug": "scan-my-pdf",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.scanflow.scanner"
+    },
+    "android": {
+      "package": "com.scanflow.scanner",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-6665157780036298~3142858953",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Scan My PDF needs camera access to scan physical documents."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Scan My PDF needs access to your photos to import documents."
+        }
+      ],
+      "expo-asset"
+    ]
+  }
+}
