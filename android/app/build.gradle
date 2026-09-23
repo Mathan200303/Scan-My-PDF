@@ -86,7 +86,7 @@ android {
 
     namespace 'com.scanflow.scanner'
     defaultConfig {
-        applicationId 'com.scanflow.scanner'
+        applicationId 'com.mathan.scanmypdf'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
