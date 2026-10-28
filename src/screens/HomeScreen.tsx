@@ -18,6 +18,8 @@ import {
   Search,
   Files,
   Sparkles,
+  Sun,
+  Moon,
 } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Spacing, BorderRadius } from '../constants/theme';
@@ -29,7 +31,7 @@ import { BannerAdView } from '../components/BannerAdView';
 import { ShareService } from '../services/shareService';
 
 export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { colors } = useTheme();
+  const { colors, isDark, setThemeMode } = useTheme();
   const insets = useSafeAreaInsets();
   const [recentDocs, setRecentDocs] = useState<DocumentItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -83,12 +85,28 @@ export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <Text style={[styles.brandText, { color: colors.text }]}>Scan My PDF</Text>
         </View>
 
-        <TouchableOpacity
-          onPress={() => navigation.navigate('DocumentsTab')}
-          style={[styles.iconButton, { backgroundColor: colors.inputBg }]}
-        >
-          <Search size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        <View style={styles.topActionsRow}>
+          {/* Theme Mode Toggle Icon in Corner */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setThemeMode(isDark ? 'light' : 'dark')}
+            style={[styles.iconButton, { backgroundColor: colors.inputBg }]}
+          >
+            {isDark ? (
+              <Sun size={20} color="#F59E0B" />
+            ) : (
+              <Moon size={20} color={colors.textSecondary} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('DocumentsTab')}
+            style={[styles.iconButton, { backgroundColor: colors.inputBg }]}
+            activeOpacity={0.7}
+          >
+            <Search size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -265,6 +283,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     letterSpacing: -0.3,
+  },
+  topActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
   iconButton: {
     width: 38,

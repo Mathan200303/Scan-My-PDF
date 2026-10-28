@@ -11,9 +11,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  Moon,
-  Sun,
-  Smartphone,
   ShieldCheck,
   FileCheck2,
   Info,
@@ -26,13 +23,13 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { Spacing, BorderRadius } from '../constants/theme';
 import { SettingsRepository } from '../storage/settingsRepository';
-import { UserSettings, ThemeMode, PdfPageSize, PdfQuality, ScanFilterType } from '../types';
+import { UserSettings, PdfPageSize, PdfQuality, ScanFilterType } from '../types';
 import { Header } from '../components/Header';
 import { ShareService } from '../services/shareService';
 
 export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { mode, setThemeMode, colors } = useTheme();
+  const { colors } = useTheme();
 
   const [settings, setSettings] = useState<UserSettings>({
     theme: 'system',
@@ -78,44 +75,8 @@ export const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 24) + 80 }]}
       >
-        {/* Appearance Section */}
-        <Text style={[styles.sectionHeading, { color: colors.textSecondary }]}>APPEARANCE</Text>
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>Theme Mode</Text>
-          <View style={styles.themeSelector}>
-            {[
-              { id: 'light' as ThemeMode, label: 'Light', icon: <Sun size={18} /> },
-              { id: 'dark' as ThemeMode, label: 'Dark', icon: <Moon size={18} /> },
-              { id: 'system' as ThemeMode, label: 'System', icon: <Smartphone size={18} /> },
-            ].map((t) => (
-              <TouchableOpacity
-                key={t.id}
-                onPress={() => setThemeMode(t.id)}
-                style={[
-                  styles.themeBtn,
-                  {
-                    backgroundColor: mode === t.id ? colors.primary : colors.inputBg,
-                  },
-                ]}
-              >
-                {React.cloneElement(t.icon, {
-                  color: mode === t.id ? '#FFFFFF' : colors.text,
-                })}
-                <Text
-                  style={[
-                    styles.themeBtnText,
-                    { color: mode === t.id ? '#FFFFFF' : colors.text },
-                  ]}
-                >
-                  {t.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
         {/* Document Defaults Section */}
-        <Text style={[styles.sectionHeading, { color: colors.textSecondary, marginTop: Spacing.lg }]}>
+        <Text style={[styles.sectionHeading, { color: colors.textSecondary }]}>
           SCAN & PDF DEFAULTS
         </Text>
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>

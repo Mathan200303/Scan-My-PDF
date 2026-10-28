@@ -80,7 +80,7 @@ export const CameraScreen: React.FC<{ navigation: any; route: any }> = ({
     try {
       setIsCapturing(true);
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.95,
+        quality: 1.0,
         skipProcessing: false,
       });
 
@@ -148,7 +148,7 @@ export const CameraScreen: React.FC<{ navigation: any; route: any }> = ({
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: false,
-        quality: 0.95,
+        quality: 1.0,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {

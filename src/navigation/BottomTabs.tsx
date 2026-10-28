@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -29,7 +29,7 @@ const Tab = createBottomTabNavigator();
 const WA_COLORS = {
   green: '#25D366', // WhatsApp Emerald Green
   teal: '#00A884',
-  
+
   // Floating Island Dock - Dark Mode (Matches user reference image)
   darkDockBg: 'rgba(22, 24, 28, 0.96)',
   darkDockBorder: 'rgba(255, 255, 255, 0.12)',
@@ -47,8 +47,9 @@ const WA_COLORS = {
   lightMuted: '#68737D',
 };
 
-const SPOTLIGHT_WIDTH = 52;
+const SPOTLIGHT_WIDTH = 48;
 const SPOTLIGHT_HEIGHT = 38;
+const INNER_PAD = 8;
 
 /**
  * Animated Floating Capsule Dock Item (Home, Docs, Tools, Settings)
@@ -122,10 +123,8 @@ const DockItem: React.FC<{
 
 /**
  * Floating Island Capsule Tab Bar
- * Exactly matching user's reference image:
- * - Floating rounded capsule dock with translucent backdrop
- * - Sliding translucent spotlight halo indicator for active tab
- * - Prominent Camera Scanner button in the CENTER (between Document and Tools)
+ * Perfectly centered spotlight halo across all 5 slots:
+ * [Home: 0, Docs: 1, Camera: 2, Tools: 3, Settings: 4]
  */
 const FloatingCapsuleTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
   const { isDark } = useTheme();
@@ -134,9 +133,12 @@ const FloatingCapsuleTabBar: React.FC<BottomTabBarProps> = ({ state, navigation 
 
   // Floating dock dimensions
   const dockMargin = 14;
-  const dockWidth = windowWidth - dockMargin * 2;
-  const totalSlots = 5; // [Home, Docs, Camera, Tools, Settings]
-  const slotWidth = dockWidth / totalSlots;
+  const initialWidth = windowWidth - dockMargin * 2;
+  const [capsuleWidth, setCapsuleWidth] = useState(initialWidth);
+
+  // Available inner width for the 5 slots
+  const availableWidth = Math.max(0, capsuleWidth - INNER_PAD * 2);
+  const slotWidth = availableWidth / 5;
 
   const dockBg = isDark ? WA_COLORS.darkDockBg : WA_COLORS.lightDockBg;
   const dockBorder = isDark ? WA_COLORS.darkDockBorder : WA_COLORS.lightDockBorder;
@@ -145,7 +147,7 @@ const FloatingCapsuleTabBar: React.FC<BottomTabBarProps> = ({ state, navigation 
   const activeTextColor = isDark ? WA_COLORS.darkActiveText : WA_COLORS.lightActiveText;
   const mutedColor = isDark ? WA_COLORS.darkMuted : WA_COLORS.lightMuted;
 
-  // Map react navigation state.index [0: Home, 1: Docs, 2: Tools, 3: Settings] to 5-slot dock position [0, 1, 2, 3, 4]
+  // Map state.index [0: Home, 1: Docs, 2: Tools, 3: Settings] to 5-slot dock position [0, 1, 2, 3, 4]
   const getDockPosition = (index: number) => {
     switch (index) {
       case 0: return 0; // Home
@@ -187,15 +189,15 @@ const FloatingCapsuleTabBar: React.FC<BottomTabBarProps> = ({ state, navigation 
     ]).start();
   }, [state.index]);
 
-  // Interpolate slideAnim to X position in the dock
+  // Perfectly centered X coordinates: INNER_PAD + (slot * slotWidth) + (slotWidth - SPOTLIGHT_WIDTH) / 2
   const translateX = slideAnim.interpolate({
     inputRange: [0, 1, 2, 3, 4],
     outputRange: [
-      0 * slotWidth + (slotWidth - SPOTLIGHT_WIDTH) / 2,
-      1 * slotWidth + (slotWidth - SPOTLIGHT_WIDTH) / 2,
-      2 * slotWidth + (slotWidth - SPOTLIGHT_WIDTH) / 2,
-      3 * slotWidth + (slotWidth - SPOTLIGHT_WIDTH) / 2,
-      4 * slotWidth + (slotWidth - SPOTLIGHT_WIDTH) / 2,
+      INNER_PAD + 0 * slotWidth + (slotWidth - SPOTLIGHT_WIDTH) / 2,
+      INNER_PAD + 1 * slotWidth + (slotWidth - SPOTLIGHT_WIDTH) / 2,
+      INNER_PAD + 2 * slotWidth + (slotWidth - SPOTLIGHT_WIDTH) / 2,
+      INNER_PAD + 3 * slotWidth + (slotWidth - SPOTLIGHT_WIDTH) / 2,
+      INNER_PAD + 4 * slotWidth + (slotWidth - SPOTLIGHT_WIDTH) / 2,
     ],
   });
 
@@ -226,15 +228,22 @@ const FloatingCapsuleTabBar: React.FC<BottomTabBarProps> = ({ state, navigation 
       pointerEvents="box-none"
     >
       <View
+        onLayout={(e) => {
+          const w = e.nativeEvent.layout.width;
+          if (w > 0 && Math.abs(w - capsuleWidth) > 1) {
+            setCapsuleWidth(w);
+          }
+        }}
         style={[
           styles.dockCapsule,
           {
             backgroundColor: dockBg,
             borderColor: dockBorder,
+            paddingHorizontal: INNER_PAD,
           },
         ]}
       >
-        {/* Sliding Spotlight Halo Indicator (As seen in user's image) */}
+        {/* Sliding Spotlight Halo Indicator (Centered around active icon) */}
         <Animated.View
           style={[
             styles.spotlightHalo,
@@ -358,7 +367,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 6,
     borderWidth: 1,
     ...Platform.select({
       ios: {
@@ -375,8 +383,8 @@ const styles = StyleSheet.create({
   // Sliding Translucent Spotlight Halo (Centered behind the active icon)
   spotlightHalo: {
     position: 'absolute',
-    top: 6,
-    left: 6,
+    top: 7,
+    left: 0,
     width: SPOTLIGHT_WIDTH,
     height: SPOTLIGHT_HEIGHT,
     borderRadius: 19,
@@ -410,12 +418,12 @@ const styles = StyleSheet.create({
   cameraTouchArea: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -10, // Subtle elevation pop above the dock
+    marginTop: -8, // Subtle elevation pop above the dock
   },
   cameraCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: WA_COLORS.green,

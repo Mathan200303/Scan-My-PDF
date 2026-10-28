@@ -20,7 +20,7 @@ export const ImageService = {
     const result = await ImageManipulator.manipulateAsync(
       uri,
       [],
-      { compress: 0.95, format: ImageManipulator.SaveFormat.JPEG }
+      { compress: 1.0, format: ImageManipulator.SaveFormat.JPEG }
     );
     return {
       uri: result.uri,
@@ -33,7 +33,7 @@ export const ImageService = {
     const result = await ImageManipulator.manipulateAsync(
       uri,
       [{ rotate: angleDegrees }],
-      { compress: 0.95, format: ImageManipulator.SaveFormat.JPEG }
+      { compress: 1.0, format: ImageManipulator.SaveFormat.JPEG }
     );
     return result.uri;
   },
@@ -53,7 +53,7 @@ export const ImageService = {
     const result = await ImageManipulator.manipulateAsync(
       uri,
       [{ crop: { originX: safeX, originY: safeY, width: safeW, height: safeH } }],
-      { compress: 0.95, format: ImageManipulator.SaveFormat.JPEG }
+      { compress: 1.0, format: ImageManipulator.SaveFormat.JPEG }
     );
     return result.uri;
   },
@@ -69,21 +69,22 @@ export const ImageService = {
 
   async prepareForPdf(uri: string, quality: PdfQuality = 'HIGH'): Promise<string> {
     let maxWidth: number | undefined;
-    let compress = 0.9;
+    let compress = 1.0;
 
     switch (quality) {
       case 'LOW':
-        maxWidth = 1000;
-        compress = 0.5;
+        maxWidth = 1400;
+        compress = 0.75;
         break;
       case 'MEDIUM':
-        maxWidth = 1600;
-        compress = 0.75;
+        maxWidth = 2400;
+        compress = 0.9;
         break;
       case 'HIGH':
       default:
-        maxWidth = 2400;
-        compress = 0.92;
+        // Maximum High Quality: preserve full camera sensor resolution with near-lossless compression
+        maxWidth = undefined;
+        compress = 0.98;
         break;
     }
 
@@ -115,11 +116,11 @@ export const ImageService = {
         (global as any).Buffer = Buffer;
       }
 
-      // Fast resolution (900px width) produces sharp document text while processing in ~80ms
+      // Maximum High Quality resolution (1800px width) produces razor-sharp document text
       const prep = await ImageManipulator.manipulateAsync(
         uri,
-        [{ resize: { width: 900 } }],
-        { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+        [{ resize: { width: 1800 } }],
+        { compress: 0.96, format: ImageManipulator.SaveFormat.JPEG }
       );
 
       const base64 = await FileServiceReadAsBase64(prep.uri);
@@ -174,7 +175,7 @@ export const ImageService = {
         }
       }
 
-      const encoded = jpeg.encode({ data, width, height }, 85);
+      const encoded = jpeg.encode({ data, width, height }, 95);
       const outBase64 = Buffer.from(encoded.data).toString('base64');
       const outUri = `${FileSystem.cacheDirectory}filter_${Date.now()}_${filter}.jpg`;
       await FileSystem.writeAsStringAsync(outUri, outBase64, {
