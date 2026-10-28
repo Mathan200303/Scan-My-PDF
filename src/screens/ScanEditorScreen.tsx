@@ -139,7 +139,7 @@ export const ScanEditorScreen: React.FC<ScanEditorScreenProps> = ({
 
     const updatedPages = [...existingPages, newPage];
 
-    navigation.navigate('MultiPage', {
+    navigation.replace('MultiPage', {
       pages: updatedPages,
     });
   };

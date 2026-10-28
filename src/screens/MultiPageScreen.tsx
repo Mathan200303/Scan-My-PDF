@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  BackHandler,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -48,6 +49,19 @@ export const MultiPageScreen: React.FC<{ navigation: any; route: any }> = ({
   const [quality, setQuality] = useState<PdfQuality>('HIGH');
   const [margin, setMargin] = useState<number>(10);
 
+  const handleExit = () => {
+    navigation.navigate('MainTabs');
+  };
+
+  useEffect(() => {
+    const onBackPress = () => {
+      handleExit();
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [navigation]);
+
   const handleAddPage = () => {
     navigation.navigate('CameraScreen', {
       existingPages: pages,
@@ -80,7 +94,7 @@ export const MultiPageScreen: React.FC<{ navigation: any; route: any }> = ({
           const updated = pages.filter((_, i) => i !== index);
           setPages(updated);
           if (updated.length === 0) {
-            navigation.goBack();
+            handleExit();
           }
         },
       },
@@ -162,7 +176,7 @@ export const MultiPageScreen: React.FC<{ navigation: any; route: any }> = ({
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Header
         title={`Scanned Document (${pages.length})`}
-        onBack={() => navigation.goBack()}
+        onBack={handleExit}
         rightAction={
           <TouchableOpacity
             onPress={() => setExportModalVisible(true)}
