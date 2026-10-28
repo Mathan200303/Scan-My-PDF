@@ -11,6 +11,7 @@ import {
   TextInput,
   Modal,
   BackHandler,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -44,26 +45,81 @@ export const DocumentViewerScreen: React.FC<{ navigation: any; route: any }> = (
   const initialDoc: DocumentItem = route.params.document;
 
   const [document, setDocument] = useState<DocumentItem>(initialDoc);
-  const [renderedPdfUri, setRenderedPdfUri] = useState<string | null>(null);
+  const [pageCount, setPageCount] = useState<number>(initialDoc.pageCount || 1);
+  const [pageUris, setPageUris] = useState<(string | null)[]>(() => {
+    const count = initialDoc.pageCount || 1;
+    const arr = new Array(count).fill(null);
+    if (initialDoc.thumbnailUri) {
+      arr[0] = initialDoc.thumbnailUri;
+    }
+    return arr;
+  });
   const [renameVisible, setRenameVisible] = useState(false);
   const [newTitle, setNewTitle] = useState(document.title);
   const [infoVisible, setInfoVisible] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
+  // Multi-page PDF Rendering: renders every page so user can scroll through the entire PDF
   useEffect(() => {
-    if (document.type === 'pdf' && document.uri) {
-      const destPath = `${FileService.getDocsDirectory()}/preview_${document.id}_1.jpg`;
-      PdfRendererService.renderPageToImage(document.uri, 1, 'JPG', destPath, 95)
-        .then((rendered) => {
-          if (rendered && rendered.uri) {
-            setRenderedPdfUri(rendered.uri);
+    let isMounted = true;
+
+    const loadAllPages = async () => {
+      if (document.type === 'pdf' && document.uri) {
+        try {
+          const totalPages =
+            document.pageCount && document.pageCount > 0
+              ? document.pageCount
+              : await PdfRendererService.getPageCount(document.uri);
+
+          if (isMounted) {
+            setPageCount(totalPages);
+            setPageUris((prev) => {
+              const next = new Array(totalPages).fill(null);
+              for (let i = 0; i < totalPages; i++) {
+                if (prev[i]) next[i] = prev[i];
+              }
+              if (!next[0] && document.thumbnailUri) {
+                next[0] = document.thumbnailUri;
+              }
+              return next;
+            });
           }
-        })
-        .catch((err) => {
-          console.log('PDF native preview fallback', err);
-        });
-    }
-  }, [document.type, document.uri, document.id]);
+
+          // Sequentially render each page to crisp image
+          for (let p = 1; p <= totalPages; p++) {
+            if (!isMounted) break;
+            const destPath = `${FileService.getDocsDirectory()}/preview_${document.id}_${p}.jpg`;
+            try {
+              const rendered = await PdfRendererService.renderPageToImage(
+                document.uri,
+                p,
+                'JPG',
+                destPath,
+                92
+              );
+              if (isMounted && rendered?.uri) {
+                setPageUris((prev) => {
+                  const updated = [...prev];
+                  updated[p - 1] = rendered.uri;
+                  return updated;
+                });
+              }
+            } catch (err) {
+              console.log(`PDF page ${p} render fallback:`, err);
+            }
+          }
+        } catch (err) {
+          console.log('PDF multi-page preview error:', err);
+        }
+      }
+    };
+
+    loadAllPages();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [document.type, document.uri, document.id, document.pageCount]);
 
   const handleShare = async () => {
     await ShareService.shareFile(document.uri);
@@ -127,7 +183,7 @@ export const DocumentViewerScreen: React.FC<{ navigation: any; route: any }> = (
 
   const imageSourceUri = React.useMemo(() => {
     const raw =
-      renderedPdfUri ||
+      pageUris[0] ||
       document.thumbnailUri ||
       (document.type === 'image' ? document.uri : '');
     if (!raw) return '';
@@ -141,7 +197,7 @@ export const DocumentViewerScreen: React.FC<{ navigation: any; route: any }> = (
       return raw;
     }
     return `file://${raw}`;
-  }, [renderedPdfUri, document.thumbnailUri, document.uri, document.type]);
+  }, [pageUris, document.thumbnailUri, document.uri, document.type]);
 
   const handleBack = () => {
     navigation.navigate('MainTabs');
@@ -181,32 +237,64 @@ export const DocumentViewerScreen: React.FC<{ navigation: any; route: any }> = (
         }
       />
 
-      {/* Main Viewer Area */}
+      {/* Main Multi-Page Scrollable Viewer Area */}
       <ScrollView
-        contentContainerStyle={styles.viewerScroll}
-        maximumZoomScale={3}
-        minimumZoomScale={1}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.viewerScroll,
+          { paddingBottom: Math.max(insets.bottom, 16) + 85 },
+        ]}
+        showsVerticalScrollIndicator={true}
       >
-        <View style={[styles.pageFrame, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {imageSourceUri ? (
-            <Image
-              source={{ uri: imageSourceUri }}
-              style={styles.pageImage}
-              resizeMode="contain"
-            />
-          ) : (
-            <View style={styles.pdfPlaceholder}>
-              <View style={[styles.pdfIconCircle, { backgroundColor: colors.primaryLight }]}>
-                <FileText size={64} color={colors.primary} />
+        {document.type === 'pdf' ? (
+          pageUris.map((uri, index) => (
+            <View
+              key={`page_${index}`}
+              style={[
+                styles.pageCard,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              {/* Page Number Badge */}
+              <View style={styles.pageHeaderRow}>
+                <View style={[styles.pageNumberBadge, { backgroundColor: colors.inputBg }]}>
+                  <Text style={[styles.pageNumberText, { color: colors.textSecondary }]}>
+                    Page {index + 1} of {pageCount}
+                  </Text>
+                </View>
               </View>
-              <Text style={[styles.pdfTitle, { color: colors.text }]}>{document.title}</Text>
-              <Text style={[styles.pdfSubtitle, { color: colors.textSecondary }]}>
-                PDF Document • {document.pageCount} {document.pageCount === 1 ? 'Page' : 'Pages'}
-              </Text>
+
+              {uri ? (
+                <Image
+                  source={{ uri: uri.startsWith('file://') ? uri : `file://${uri}` }}
+                  style={styles.pageImage}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={styles.pageLoadingContainer}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                  <Text style={[styles.pageLoadingText, { color: colors.textSecondary }]}>
+                    Rendering Page {index + 1}...
+                  </Text>
+                </View>
+              )}
             </View>
-          )}
-        </View>
+          ))
+        ) : (
+          <View
+            style={[
+              styles.pageCard,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            {imageSourceUri ? (
+              <Image
+                source={{ uri: imageSourceUri }}
+                style={styles.pageImage}
+                resizeMode="contain"
+              />
+            ) : null}
+          </View>
+        )}
       </ScrollView>
 
       {/* Bottom Floating Action Bar */}
@@ -353,24 +441,51 @@ const styles = StyleSheet.create({
     padding: Spacing.xs,
   },
   viewerScroll: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     padding: Spacing.md,
   },
-  pageFrame: {
-    width: SCREEN_WIDTH - 32,
-    minHeight: (SCREEN_WIDTH - 32) * 1.33,
-    borderRadius: BorderRadius.md,
-    overflow: 'hidden',
+  pageCard: {
+    width: '100%',
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
     elevation: 3,
+    marginBottom: Spacing.md,
+  },
+  pageHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: Spacing.sm,
+    paddingTop: Spacing.xs,
+    paddingBottom: 4,
+  },
+  pageNumberBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+  },
+  pageNumberText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   pageImage: {
     width: '100%',
-    height: (SCREEN_WIDTH - 32) * 1.33,
+    height: (SCREEN_WIDTH - 32) * 1.414,
+  },
+  pageLoadingContainer: {
+    width: '100%',
+    height: (SCREEN_WIDTH - 32) * 1.414,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pageLoadingText: {
+    fontSize: 12,
+    marginTop: 8,
+    fontWeight: '500',
   },
   pdfPlaceholder: {
     alignItems: 'center',
