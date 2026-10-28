@@ -1,15 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   Text,
-  Animated,
-  Easing,
+  Platform,
 } from 'react-native';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   Home,
   FileText,
@@ -25,92 +23,44 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
-// Empty component for the Scan tab since pressing it opens Camera directly
+// Empty component for the Scan tab since pressing it navigates to CameraScreen directly
 const DummyScanScreen = () => <View />;
 
-// Modern Floating Dock Tab Bar with Cyberpunk Spectrum Running Border Animation & Unclipped Center Scan Button
-const CustomModernTabBar: React.FC<BottomTabBarProps> = ({
-  state,
-  navigation,
-}) => {
-  const { colors, isDark } = useTheme();
+// WhatsApp Signature Color Palette
+const WA_COLORS = {
+  green: '#25D366', // WhatsApp Emerald Green
+  teal: '#00A884', // WhatsApp Teal Green
+  darkBar: '#0B141B', // WhatsApp Dark Mode Bar
+  darkBorder: '#1F2C34', // WhatsApp Dark Mode Border
+  darkMuted: '#8696A0', // WhatsApp Dark Mode Muted Icon/Text
+  darkActiveText: '#E9EDEF', // WhatsApp Dark Mode Active Label
+  darkPill: 'rgba(37, 211, 102, 0.18)', // WhatsApp Dark Pill Capsule
+  lightBar: '#FFFFFF', // WhatsApp Light Mode Bar
+  lightBorder: '#E9EDEF', // WhatsApp Light Mode Border
+  lightMuted: '#54656F', // WhatsApp Light Mode Muted Icon/Text
+  lightActiveText: '#008069', // WhatsApp Light Mode Active Label
+  lightPill: '#D8FDD2', // WhatsApp Light Pill Capsule
+};
+
+/**
+ * Authentic WhatsApp Style Bottom Navigation Bar
+ * Features full-width dock, WhatsApp signature active pill capsule indicators,
+ * and a prominent WhatsApp Green Camera FAB for instant document scanning.
+ */
+const WhatsAppTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
+  const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
-  // Slow continuous rotation animation for the glowing border beam (6.5s per revolution)
-  const borderRotateAnim = useRef(new Animated.Value(0)).current;
-  // Center scan ring continuous rotation (4.5s per revolution)
-  const scanRingRotateAnim = useRef(new Animated.Value(0)).current;
-  // Subtle breathing pulse for the center scanner glow
-  const scanPulseAnim = useRef(new Animated.Value(1)).current;
+  const barBg = isDark ? WA_COLORS.darkBar : WA_COLORS.lightBar;
+  const borderTopColor = isDark ? WA_COLORS.darkBorder : WA_COLORS.lightBorder;
+  const mutedColor = isDark ? WA_COLORS.darkMuted : WA_COLORS.lightMuted;
+  const pillBg = isDark ? WA_COLORS.darkPill : WA_COLORS.lightPill;
+  const activeIconColor = isDark ? WA_COLORS.green : WA_COLORS.teal;
+  const activeTextColor = isDark ? WA_COLORS.darkActiveText : WA_COLORS.lightActiveText;
 
-  // Lighter cool slate & electric cyan palette
-  const activeColor = '#38BDF8'; // Vivid Electric Cyan
-  const activePillBg = 'rgba(56, 189, 248, 0.22)';
-  const scanLabelColor = '#38BDF8';
+  // Safe bottom padding
+  const bottomPadding = Math.max(insets.bottom, 6);
 
-  useEffect(() => {
-    // 1. Slow loop for dock border beam
-    const borderLoop = Animated.loop(
-      Animated.timing(borderRotateAnim, {
-        toValue: 1,
-        duration: 6500,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-
-    // 2. Continuous loop for scan button ring
-    const scanRingLoop = Animated.loop(
-      Animated.timing(scanRingRotateAnim, {
-        toValue: 1,
-        duration: 4500,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-
-    // 3. Gentle breathing pulse for scan button
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scanPulseAnim, {
-          toValue: 1.05,
-          duration: 1800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(scanPulseAnim, {
-          toValue: 1.0,
-          duration: 1800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    borderLoop.start();
-    scanRingLoop.start();
-    pulseLoop.start();
-
-    return () => {
-      borderLoop.stop();
-      scanRingLoop.stop();
-      pulseLoop.stop();
-    };
-  }, [borderRotateAnim, scanRingRotateAnim, scanPulseAnim]);
-
-  const borderSpin = borderRotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  const scanRingSpin = scanRingRotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
-  const bottomMargin = Math.max(insets.bottom, 10);
-
-  // Tab definitions
   const tabs = [
     { name: 'HomeTab', label: 'Home', icon: Home, index: 0 },
     { name: 'DocumentsTab', label: 'Docs', icon: FileText, index: 1 },
@@ -119,195 +69,177 @@ const CustomModernTabBar: React.FC<BottomTabBarProps> = ({
   ];
 
   return (
-    <View style={[styles.floatingWrapper, { paddingBottom: bottomMargin }]} pointerEvents="box-none">
-      {/* 1. Track with Animated Running Glowing Border */}
-      <View style={styles.animatedBorderTrack}>
-        {/* Continuous Rotating Multi-Color Light Beam */}
-        <Animated.View
-          style={[
-            styles.rotatingGradientBox,
-            {
-              transform: [{ rotate: borderSpin }],
-            },
-          ]}
-        >
-          <LinearGradient
-            colors={[
-              '#80c5e3', // Cyan
-              '#818CF8', // Indigo
-              '#C084FC', // Purple
-              '#34D399', // Mint
-              '#38BDF8', // Cyan
-            ]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.fullSize}
-          />
-        </Animated.View>
+    <View
+      style={[
+        styles.barContainer,
+        {
+          backgroundColor: barBg,
+          borderTopColor,
+          paddingBottom: bottomPadding,
+        },
+      ]}
+    >
+      {/* Left Tab: Home */}
+      {(() => {
+        const tab = tabs[0];
+        const isFocused = state.index === tab.index;
+        const IconComponent = tab.icon;
 
-        {/* Inner Floating Island Dock with Lighter Cool Slate Backdrop */}
-        <LinearGradient
-          colors={['#3e5474', '#355175', '#2a4467']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.dockContainer}
-        >
-          {/* Left Tabs: Home & Docs */}
-          {tabs.slice(0, 2).map((tab) => {
-            const isFocused = state.index === tab.index;
-            const IconComponent = tab.icon;
-
-            return (
-              <TouchableOpacity
-                key={tab.name}
-                activeOpacity={0.7}
-                onPress={() => {
-                  if (!isFocused) navigation.navigate(tab.name);
-                }}
-                style={styles.tabItem}
-              >
-                <View
-                  style={[
-                    styles.tabIconWrapper,
-                    isFocused && {
-                      backgroundColor: activePillBg,
-                    },
-                  ]}
-                >
-                  <IconComponent
-                    size={21}
-                    color={isFocused ? activeColor : '#CBD5E1'}
-                    strokeWidth={isFocused ? 2.5 : 1.9}
-                  />
-                </View>
-
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    {
-                      color: isFocused ? activeColor : '#CBD5E1',
-                      fontWeight: isFocused ? '700' : '500',
-                    },
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-
-                {isFocused ? (
-                  <View style={[styles.activeIndicator, { backgroundColor: activeColor }]} />
-                ) : (
-                  <View style={styles.inactiveIndicator} />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-
-          {/* Center Space Reserved for Floating Scan Button */}
-          <View style={styles.centerPlaceholder} />
-
-          {/* Right Tabs: Tools & Settings */}
-          {tabs.slice(2, 4).map((tab) => {
-            const isFocused = state.index === tab.index;
-            const IconComponent = tab.icon;
-
-            return (
-              <TouchableOpacity
-                key={tab.name}
-                activeOpacity={0.7}
-                onPress={() => {
-                  if (!isFocused) navigation.navigate(tab.name);
-                }}
-                style={styles.tabItem}
-              >
-                <View
-                  style={[
-                    styles.tabIconWrapper,
-                    isFocused && {
-                      backgroundColor: activePillBg,
-                    },
-                  ]}
-                >
-                  <IconComponent
-                    size={21}
-                    color={isFocused ? activeColor : '#CBD5E1'}
-                    strokeWidth={isFocused ? 2.5 : 1.9}
-                  />
-                </View>
-
-                <Text
-                  style={[
-                    styles.tabLabel,
-                    {
-                      color: isFocused ? activeColor : '#CBD5E1',
-                      fontWeight: isFocused ? '700' : '500',
-                    },
-                  ]}
-                >
-                  {tab.label}
-                </Text>
-
-                {isFocused ? (
-                  <View style={[styles.activeIndicator, { backgroundColor: activeColor }]} />
-                ) : (
-                  <View style={styles.inactiveIndicator} />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </LinearGradient>
-      </View>
-
-      {/* 2. Elevated Floating Center Scan Button (OUTSIDE the clipped overflow container so it is NEVER cut off) */}
-      <View style={styles.floatingCenterOverlay} pointerEvents="box-none">
-        <TouchableOpacity
-          activeOpacity={0.88}
-          onPress={() => navigation.navigate('CameraScreen')}
-          style={styles.scanTouchTarget}
-        >
-          {/* Animated Outer Pulse Ring */}
-          <Animated.View
-            style={[
-              styles.scanPulseWrapper,
-              {
-                transform: [{ scale: scanPulseAnim }],
-              },
-            ]}
+        return (
+          <TouchableOpacity
+            key={tab.name}
+            activeOpacity={0.7}
+            onPress={() => {
+              if (!isFocused) navigation.navigate(tab.name);
+            }}
+            style={styles.tabItem}
           >
-            {/* Rotating Glow Ring */}
-            <View style={styles.scanGlowRingTrack}>
-              <Animated.View
-                style={[
-                  styles.scanRotatingGradient,
-                  {
-                    transform: [{ rotate: scanRingSpin }],
-                  },
-                ]}
-              >
-                <LinearGradient
-                  colors={['#60A5FA', '#3B82F6', '#06B6D4', '#60A5FA']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.fullSize}
-                />
-              </Animated.View>
-
-              {/* Inner Gradient Action Core (Electric Royal Blue) */}
-              <LinearGradient
-                colors={['#3B82F6', '#1D4ED8']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.scanCore}
-              >
-                <View style={styles.scanTargetCornerTL} />
-                <View style={styles.scanTargetCornerBR} />
-                <Camera size={26} color="#FFFFFF" strokeWidth={2.4} />
-              </LinearGradient>
+            <View style={[styles.pillWrapper, isFocused && { backgroundColor: pillBg }]}>
+              <IconComponent
+                size={22}
+                color={isFocused ? activeIconColor : mutedColor}
+                strokeWidth={isFocused ? 2.4 : 1.9}
+              />
             </View>
-          </Animated.View>
+            <Text
+              style={[
+                styles.tabLabel,
+                {
+                  color: isFocused ? activeTextColor : mutedColor,
+                  fontWeight: isFocused ? '700' : '500',
+                },
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })()}
 
-          <Text style={[styles.scanLabel, { color: scanLabelColor }]}>SCAN</Text>
+      {/* Left-Center Tab: Docs */}
+      {(() => {
+        const tab = tabs[1];
+        const isFocused = state.index === tab.index;
+        const IconComponent = tab.icon;
+
+        return (
+          <TouchableOpacity
+            key={tab.name}
+            activeOpacity={0.7}
+            onPress={() => {
+              if (!isFocused) navigation.navigate(tab.name);
+            }}
+            style={styles.tabItem}
+          >
+            <View style={[styles.pillWrapper, isFocused && { backgroundColor: pillBg }]}>
+              <IconComponent
+                size={22}
+                color={isFocused ? activeIconColor : mutedColor}
+                strokeWidth={isFocused ? 2.4 : 1.9}
+              />
+            </View>
+            <Text
+              style={[
+                styles.tabLabel,
+                {
+                  color: isFocused ? activeTextColor : mutedColor,
+                  fontWeight: isFocused ? '700' : '500',
+                },
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })()}
+
+      {/* Center Action: WhatsApp Signature Green Camera Scan Button */}
+      <View style={styles.centerActionWrapper}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => navigation.navigate('CameraScreen')}
+          style={styles.scanButtonTouch}
+        >
+          <View style={styles.scanGreenCircle}>
+            <Camera size={23} color="#FFFFFF" strokeWidth={2.4} />
+          </View>
+          <Text style={[styles.scanLabel, { color: WA_COLORS.green }]}>Scan</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Right-Center Tab: Tools */}
+      {(() => {
+        const tab = tabs[2];
+        const isFocused = state.index === tab.index;
+        const IconComponent = tab.icon;
+
+        return (
+          <TouchableOpacity
+            key={tab.name}
+            activeOpacity={0.7}
+            onPress={() => {
+              if (!isFocused) navigation.navigate(tab.name);
+            }}
+            style={styles.tabItem}
+          >
+            <View style={[styles.pillWrapper, isFocused && { backgroundColor: pillBg }]}>
+              <IconComponent
+                size={22}
+                color={isFocused ? activeIconColor : mutedColor}
+                strokeWidth={isFocused ? 2.4 : 1.9}
+              />
+            </View>
+            <Text
+              style={[
+                styles.tabLabel,
+                {
+                  color: isFocused ? activeTextColor : mutedColor,
+                  fontWeight: isFocused ? '700' : '500',
+                },
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })()}
+
+      {/* Right Tab: Settings */}
+      {(() => {
+        const tab = tabs[3];
+        const isFocused = state.index === tab.index;
+        const IconComponent = tab.icon;
+
+        return (
+          <TouchableOpacity
+            key={tab.name}
+            activeOpacity={0.7}
+            onPress={() => {
+              if (!isFocused) navigation.navigate(tab.name);
+            }}
+            style={styles.tabItem}
+          >
+            <View style={[styles.pillWrapper, isFocused && { backgroundColor: pillBg }]}>
+              <IconComponent
+                size={22}
+                color={isFocused ? activeIconColor : mutedColor}
+                strokeWidth={isFocused ? 2.4 : 1.9}
+              />
+            </View>
+            <Text
+              style={[
+                styles.tabLabel,
+                {
+                  color: isFocused ? activeTextColor : mutedColor,
+                  fontWeight: isFocused ? '700' : '500',
+                },
+              ]}
+            >
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })()}
     </View>
   );
 };
@@ -315,7 +247,7 @@ const CustomModernTabBar: React.FC<BottomTabBarProps> = ({
 export const BottomTabs = () => {
   return (
     <Tab.Navigator
-      tabBar={(props) => <CustomModernTabBar {...props} />}
+      tabBar={(props) => <WhatsAppTabBar {...props} />}
       screenOptions={{
         headerShown: false,
       }}
@@ -330,159 +262,74 @@ export const BottomTabs = () => {
 };
 
 const styles = StyleSheet.create({
-  floatingWrapper: {
+  barContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // 1.8px Outer Animated Track which clips the rotating beam to only the border
-  animatedBorderTrack: {
-    width: '92%',
-    maxWidth: 440,
-    height: 68,
-    borderRadius: 34,
-    padding: 1.8, // Thickness of running glowing border
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Elevation and Ambient Drop Shadow with Royal Blue Glow
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  rotatingGradientBox: {
-    position: 'absolute',
-    width: 600,
-    height: 600,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fullSize: {
-    width: '100%',
-    height: '100%',
-  },
-  dockContainer: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-    borderRadius: 32.2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingHorizontal: 6,
+    borderTopWidth: 1,
+    paddingTop: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
   },
-  tabIconWrapper: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 14,
+  // WhatsApp Iconic Rounded Pill Capsule around active tab icon
+  pillWrapper: {
+    width: 56,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabLabel: {
-    fontSize: 10,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 3,
     letterSpacing: -0.1,
   },
-  activeIndicator: {
-    width: 14,
-    height: 3,
-    borderRadius: 2,
-    marginTop: 2,
-  },
-  inactiveIndicator: {
-    width: 14,
-    height: 3,
-    marginTop: 2,
-    backgroundColor: 'transparent',
-  },
-  centerPlaceholder: {
-    flex: 1.1,
-  },
-  // Floating Center Scan Overlay placed above the dock with NO clipping
-  floatingCenterOverlay: {
-    position: 'absolute',
-    top: -16,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 999,
-    elevation: 20,
-  },
-  scanTouchTarget: {
+  // WhatsApp Center Quick Scan Button
+  centerActionWrapper: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scanPulseWrapper: {
+  scanButtonTouch: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: -8, // Subtle elevation above the bar
   },
-  scanGlowRingTrack: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    padding: 2.2,
-    overflow: 'hidden',
+  scanGreenCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: WA_COLORS.green,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#8B5CF6',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 16,
-  },
-  scanRotatingGradient: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scanCore: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  scanTargetCornerTL: {
-    position: 'absolute',
-    top: 5,
-    left: 5,
-    width: 7,
-    height: 7,
-    borderTopWidth: 1.5,
-    borderLeftWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.7)',
-    borderTopLeftRadius: 2,
-  },
-  scanTargetCornerBR: {
-    position: 'absolute',
-    bottom: 5,
-    right: 5,
-    width: 7,
-    height: 7,
-    borderBottomWidth: 1.5,
-    borderRightWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.7)',
-    borderBottomRightRadius: 2,
+    shadowColor: WA_COLORS.green,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 5,
   },
   scanLabel: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    marginTop: 3,
-    letterSpacing: 0.6,
+    fontSize: 10.5,
+    fontWeight: '700',
+    marginTop: 2,
+    letterSpacing: 0.2,
   },
 });

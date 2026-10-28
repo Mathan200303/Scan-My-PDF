@@ -35,15 +35,15 @@ export const CoverPageScreen: React.FC<{ navigation: any }> = ({ navigation }) =
   const { colors } = useTheme();
 
   const [template, setTemplate] = useState<CoverTemplateType>('academic');
-  const [title, setTitle] = useState('Final Term Research Assignment');
-  const [subtitle, setSubtitle] = useState('Distributed Computing & Cloud Architecture');
-  const [studentName, setStudentName] = useState('Narmathan K.');
-  const [studentId, setStudentId] = useState('ST-2026-8941');
-  const [institution, setInstitution] = useState('Department of Computer Science');
-  const [course, setCourse] = useState('B.Sc. Software Engineering');
-  const [subject, setSubject] = useState('Mobile Systems (CS402)');
-  const [lecturer, setLecturer] = useState('Dr. A. Richardson');
-  const [date, setDate] = useState(new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }));
+  const [title, setTitle] = useState('');
+  const [subtitle, setSubtitle] = useState('');
+  const [studentName, setStudentName] = useState('');
+  const [studentId, setStudentId] = useState('');
+  const [institution, setInstitution] = useState('');
+  const [course, setCourse] = useState('');
+  const [subject, setSubject] = useState('');
+  const [lecturer, setLecturer] = useState('');
+  const [date, setDate] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [targetPdf, setTargetPdf] = useState<DocumentItem | null>(null);
@@ -283,11 +283,11 @@ export const CoverPageScreen: React.FC<{ navigation: any }> = ({ navigation }) =
             style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
           />
 
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Submission Date</Text>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Submission Date (Optional)</Text>
           <TextInput
             value={date}
             onChangeText={setDate}
-            placeholder="Date string"
+            placeholder="e.g. October 29, 2026"
             placeholderTextColor={colors.textMuted}
             style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
           />
