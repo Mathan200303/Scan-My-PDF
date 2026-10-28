@@ -31,19 +31,21 @@ const WA_COLORS = {
   teal: '#00A884',
 
   // Floating Island Dock - Dark Mode (Matches user reference image)
-  darkDockBg: 'rgba(22, 24, 28, 0.96)',
-  darkDockBorder: 'rgba(255, 255, 255, 0.12)',
-  darkSpotlight: 'rgba(255, 255, 255, 0.18)', // Oval translucent glow around active icon
+  darkDockBg: '#16181C',
+  darkDockBorder: 'rgba(255, 255, 255, 0.22)',
+  darkSpotlight: 'rgba(255, 255, 255, 0.16)', // Oval translucent glow around active icon
+  darkSpotlightBorder: 'rgba(255, 255, 255, 0.32)', // Visible crisp border for the spotlight halo
   darkActiveIcon: '#FFFFFF',
   darkActiveText: '#FFFFFF',
   darkMuted: '#949BA4',
 
   // Floating Island Dock - Light Mode
-  lightDockBg: 'rgba(255, 255, 255, 0.97)',
-  lightDockBorder: 'rgba(0, 0, 0, 0.08)',
-  lightSpotlight: 'rgba(37, 211, 102, 0.16)', // Soft mint translucent glow
-  lightActiveIcon: '#111B21',
-  lightActiveText: '#111B21',
+  lightDockBg: '#FFFFFF',
+  lightDockBorder: 'rgba(0, 0, 0, 0.14)',
+  lightSpotlight: 'rgba(37, 211, 102, 0.14)', // Soft mint translucent glow
+  lightSpotlightBorder: 'rgba(37, 211, 102, 0.45)', // Visible crisp border for the spotlight halo
+  lightActiveIcon: '#008069',
+  lightActiveText: '#008069',
   lightMuted: '#68737D',
 };
 
@@ -53,6 +55,7 @@ const INNER_PAD = 8;
 
 /**
  * Animated Floating Capsule Dock Item (Home, Docs, Tools, Settings)
+ * Clean outline icons with sharp borders (no solid dark blob)
  */
 const DockItem: React.FC<{
   label: string;
@@ -101,7 +104,7 @@ const DockItem: React.FC<{
             size={22}
             color={isFocused ? activeIconColor : mutedColor}
             strokeWidth={isFocused ? 2.5 : 2.0}
-            fill={isFocused ? activeIconColor : 'none'}
+            fill="none" // Preserves clean, visible icon outlines and borders
           />
         </Animated.View>
       </View>
@@ -123,8 +126,9 @@ const DockItem: React.FC<{
 
 /**
  * Floating Island Capsule Tab Bar
- * Perfectly centered spotlight halo across all 5 slots:
- * [Home: 0, Docs: 1, Camera: 2, Tools: 3, Settings: 4]
+ * - Elevated green camera scan button at the TOP CENTER
+ * - Clear visible borders for both the dock capsule and the active spotlight halo
+ * - Sharp outline icon borders (no black blob)
  */
 const FloatingCapsuleTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
   const { isDark } = useTheme();
@@ -143,6 +147,7 @@ const FloatingCapsuleTabBar: React.FC<BottomTabBarProps> = ({ state, navigation 
   const dockBg = isDark ? WA_COLORS.darkDockBg : WA_COLORS.lightDockBg;
   const dockBorder = isDark ? WA_COLORS.darkDockBorder : WA_COLORS.lightDockBorder;
   const spotlightBg = isDark ? WA_COLORS.darkSpotlight : WA_COLORS.lightSpotlight;
+  const spotlightBorder = isDark ? WA_COLORS.darkSpotlightBorder : WA_COLORS.lightSpotlightBorder;
   const activeIconColor = isDark ? WA_COLORS.darkActiveIcon : WA_COLORS.lightActiveIcon;
   const activeTextColor = isDark ? WA_COLORS.darkActiveText : WA_COLORS.lightActiveText;
   const mutedColor = isDark ? WA_COLORS.darkMuted : WA_COLORS.lightMuted;
@@ -243,12 +248,13 @@ const FloatingCapsuleTabBar: React.FC<BottomTabBarProps> = ({ state, navigation 
           },
         ]}
       >
-        {/* Sliding Spotlight Halo Indicator (Centered around active icon) */}
+        {/* Sliding Spotlight Halo Indicator (with visible border around active icon) */}
         <Animated.View
           style={[
             styles.spotlightHalo,
             {
               backgroundColor: spotlightBg,
+              borderColor: spotlightBorder,
               transform: [{ translateX }, { scaleX: stretchAnim }],
             },
           ]}
@@ -280,7 +286,7 @@ const FloatingCapsuleTabBar: React.FC<BottomTabBarProps> = ({ state, navigation 
           activeTextColor={activeTextColor}
         />
 
-        {/* 3. CENTER CAMERA SCANNER (Placed in center between Docs and Tools) */}
+        {/* 3. CENTER CAMERA SCANNER (Elevated at top center of tab bar) */}
         <View style={styles.centerSlot}>
           <TouchableOpacity
             activeOpacity={0.88}
@@ -293,10 +299,11 @@ const FloatingCapsuleTabBar: React.FC<BottomTabBarProps> = ({ state, navigation 
                 {
                   transform: [{ scale: cameraScale }],
                   backgroundColor: WA_COLORS.green,
+                  borderColor: dockBg,
                 },
               ]}
             >
-              <Camera size={24} color="#FFFFFF" strokeWidth={2.4} />
+              <Camera size={26} color="#FFFFFF" strokeWidth={2.4} />
             </Animated.View>
             <Text style={[styles.cameraLabel, { color: WA_COLORS.green }]}>
               Scan
@@ -367,7 +374,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 1,
+    borderWidth: 1.5, // Crisp, clearly defined capsule border
     ...Platform.select({
       ios: {
         shadowColor: '#000000',
@@ -380,7 +387,7 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  // Sliding Translucent Spotlight Halo (Centered behind the active icon)
+  // Sliding Translucent Spotlight Halo (Centered behind the active icon with border)
   spotlightHalo: {
     position: 'absolute',
     top: 7,
@@ -388,6 +395,7 @@ const styles = StyleSheet.create({
     width: SPOTLIGHT_WIDTH,
     height: SPOTLIGHT_HEIGHT,
     borderRadius: 19,
+    borderWidth: 1.2, // Clearly visible border around the spotlight halo
     zIndex: 0,
   },
   tabItem: {
@@ -415,25 +423,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 2,
   },
+  // Elevated higher up to the top center of the tab bar
   cameraTouchArea: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -8, // Subtle elevation pop above the dock
+    marginTop: -26, // Protrudes gracefully above the top of the tab bar
   },
   cameraCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 3.5, // Protective outer ring matching dock capsule
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: WA_COLORS.green,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.45,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowRadius: 10,
+    elevation: 10,
   },
   cameraLabel: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '700',
     marginTop: 2,
     letterSpacing: 0.2,
