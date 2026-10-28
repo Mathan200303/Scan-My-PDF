@@ -89,8 +89,15 @@ android {
         applicationId 'com.mathan.scanmypdf'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 10
-        versionName "1.0.1"
+        versionCode 11
+        versionName "1.0.2"
+        externalNativeBuild {
+            cmake {
+                arguments "-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384",
+                          "-DCMAKE_MODULE_LINKER_FLAGS=-Wl,-z,max-page-size=16384",
+                          "-DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384"
+            }
+        }
     }
     signingConfigs {
         debug {
