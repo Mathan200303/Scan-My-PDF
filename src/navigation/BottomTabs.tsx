@@ -23,29 +23,41 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 
 const Tab = createBottomTabNavigator();
 
-// Empty component for the Scan tab since pressing it navigates to CameraScreen directly
-const DummyScanScreen = () => <View />;
-
-// WhatsApp Signature Color Palette
+// WhatsApp Official Color Palette
 const WA_COLORS = {
+  // Brand Greens
   green: '#25D366', // WhatsApp Emerald Green
-  teal: '#00A884', // WhatsApp Teal Green
-  darkBar: '#0B141B', // WhatsApp Dark Mode Bar
-  darkBorder: '#1F2C34', // WhatsApp Dark Mode Border
-  darkMuted: '#8696A0', // WhatsApp Dark Mode Muted Icon/Text
-  darkActiveText: '#E9EDEF', // WhatsApp Dark Mode Active Label
-  darkPill: 'rgba(37, 211, 102, 0.18)', // WhatsApp Dark Pill Capsule
-  lightBar: '#FFFFFF', // WhatsApp Light Mode Bar
-  lightBorder: '#E9EDEF', // WhatsApp Light Mode Border
-  lightMuted: '#54656F', // WhatsApp Light Mode Muted Icon/Text
-  lightActiveText: '#008069', // WhatsApp Light Mode Active Label
-  lightPill: '#D8FDD2', // WhatsApp Light Pill Capsule
+  tealDark: '#008069', // WhatsApp Teal Green (Light active icon)
+  
+  // Dark Theme (WhatsApp Android M3)
+  darkBar: '#0B141B', // WhatsApp Dark Nav Bar Background
+  darkBorder: '#1F2C34', // WhatsApp Dark Top Border
+  darkPill: '#103629', // WhatsApp Dark Active Pill Capsule
+  darkActiveIcon: '#25D366', // WhatsApp Dark Active Icon
+  darkActiveText: '#E9EDEF', // WhatsApp Dark Active Label
+  darkMuted: '#8696A0', // WhatsApp Dark Inactive Icon & Label
+  
+  // Light Theme (WhatsApp Android M3)
+  lightBar: '#FFFFFF', // WhatsApp Light Nav Bar Background
+  lightBorder: '#E9EDEF', // WhatsApp Light Top Border
+  lightPill: '#D8FDD2', // WhatsApp Light Active Pill Capsule
+  lightActiveIcon: '#008069', // WhatsApp Light Active Icon
+  lightActiveText: '#111B21', // WhatsApp Light Active Label
+  lightMuted: '#54656F', // WhatsApp Light Inactive Icon & Label
 };
 
+const TAB_CONFIG = [
+  { name: 'HomeTab', label: 'Home', icon: Home },
+  { name: 'DocumentsTab', label: 'Docs', icon: FileText },
+  { name: 'ToolsTab', label: 'Tools', icon: Wrench },
+  { name: 'SettingsTab', label: 'Settings', icon: SettingsIcon },
+];
+
 /**
- * Authentic WhatsApp Style Bottom Navigation Bar
- * Features full-width dock, WhatsApp signature active pill capsule indicators,
- * and a prominent WhatsApp Green Camera FAB for instant document scanning.
+ * Pixel-Perfect WhatsApp Material 3 Bottom Navigation Bar
+ * - Flat, edge-to-edge bar with WhatsApp 4 uniform tabs
+ * - Signature 64x32dp pill capsule behind active icon
+ * - WhatsApp Floating Action Button (FAB) at bottom-right for instant camera scan
  */
 const WhatsAppTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
   const { isDark } = useTheme();
@@ -53,193 +65,88 @@ const WhatsAppTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
 
   const barBg = isDark ? WA_COLORS.darkBar : WA_COLORS.lightBar;
   const borderTopColor = isDark ? WA_COLORS.darkBorder : WA_COLORS.lightBorder;
-  const mutedColor = isDark ? WA_COLORS.darkMuted : WA_COLORS.lightMuted;
   const pillBg = isDark ? WA_COLORS.darkPill : WA_COLORS.lightPill;
-  const activeIconColor = isDark ? WA_COLORS.green : WA_COLORS.teal;
+  const activeIconColor = isDark ? WA_COLORS.darkActiveIcon : WA_COLORS.lightActiveIcon;
   const activeTextColor = isDark ? WA_COLORS.darkActiveText : WA_COLORS.lightActiveText;
+  const mutedColor = isDark ? WA_COLORS.darkMuted : WA_COLORS.lightMuted;
 
-  // Safe bottom padding
-  const bottomPadding = Math.max(insets.bottom, 6);
-
-  const tabs = [
-    { name: 'HomeTab', label: 'Home', icon: Home, index: 0 },
-    { name: 'DocumentsTab', label: 'Docs', icon: FileText, index: 1 },
-    { name: 'ToolsTab', label: 'Tools', icon: Wrench, index: 3 },
-    { name: 'SettingsTab', label: 'Settings', icon: SettingsIcon, index: 4 },
-  ];
+  const bottomPadding = Math.max(insets.bottom, 8);
 
   return (
-    <View
-      style={[
-        styles.barContainer,
-        {
-          backgroundColor: barBg,
-          borderTopColor,
-          paddingBottom: bottomPadding,
-        },
-      ]}
-    >
-      {/* Left Tab: Home */}
-      {(() => {
-        const tab = tabs[0];
-        const isFocused = state.index === tab.index;
-        const IconComponent = tab.icon;
+    <View style={styles.rootWrapper} pointerEvents="box-none">
+      {/* WhatsApp Signature Floating Action Button (FAB) on bottom-right */}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate('CameraScreen')}
+        style={[
+          styles.fabButton,
+          {
+            bottom: bottomPadding + 68,
+            backgroundColor: WA_COLORS.green,
+          },
+        ]}
+      >
+        <Camera size={26} color="#FFFFFF" strokeWidth={2.4} />
+      </TouchableOpacity>
 
-        return (
-          <TouchableOpacity
-            key={tab.name}
-            activeOpacity={0.7}
-            onPress={() => {
-              if (!isFocused) navigation.navigate(tab.name);
-            }}
-            style={styles.tabItem}
-          >
-            <View style={[styles.pillWrapper, isFocused && { backgroundColor: pillBg }]}>
-              <IconComponent
-                size={22}
-                color={isFocused ? activeIconColor : mutedColor}
-                strokeWidth={isFocused ? 2.4 : 1.9}
-              />
-            </View>
-            <Text
-              style={[
-                styles.tabLabel,
-                {
-                  color: isFocused ? activeTextColor : mutedColor,
-                  fontWeight: isFocused ? '700' : '500',
-                },
-              ]}
+      {/* WhatsApp Flat 4-Tab Navigation Bar */}
+      <View
+        style={[
+          styles.barContainer,
+          {
+            backgroundColor: barBg,
+            borderTopColor,
+            paddingBottom: bottomPadding,
+          },
+        ]}
+      >
+        {TAB_CONFIG.map((tab, index) => {
+          const isFocused = state.index === index;
+          const IconComponent = tab.icon;
+
+          return (
+            <TouchableOpacity
+              key={tab.name}
+              activeOpacity={0.7}
+              onPress={() => {
+                if (!isFocused) {
+                  navigation.navigate(tab.name);
+                }
+              }}
+              style={styles.tabItem}
             >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })()}
+              {/* WhatsApp M3 Pill Capsule around active tab icon */}
+              <View
+                style={[
+                  styles.pillWrapper,
+                  {
+                    backgroundColor: isFocused ? pillBg : 'transparent',
+                  },
+                ]}
+              >
+                <IconComponent
+                  size={24}
+                  color={isFocused ? activeIconColor : mutedColor}
+                  strokeWidth={isFocused ? 2.4 : 1.9}
+                />
+              </View>
 
-      {/* Left-Center Tab: Docs */}
-      {(() => {
-        const tab = tabs[1];
-        const isFocused = state.index === tab.index;
-        const IconComponent = tab.icon;
-
-        return (
-          <TouchableOpacity
-            key={tab.name}
-            activeOpacity={0.7}
-            onPress={() => {
-              if (!isFocused) navigation.navigate(tab.name);
-            }}
-            style={styles.tabItem}
-          >
-            <View style={[styles.pillWrapper, isFocused && { backgroundColor: pillBg }]}>
-              <IconComponent
-                size={22}
-                color={isFocused ? activeIconColor : mutedColor}
-                strokeWidth={isFocused ? 2.4 : 1.9}
-              />
-            </View>
-            <Text
-              style={[
-                styles.tabLabel,
-                {
-                  color: isFocused ? activeTextColor : mutedColor,
-                  fontWeight: isFocused ? '700' : '500',
-                },
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })()}
-
-      {/* Center Action: WhatsApp Signature Green Camera Scan Button */}
-      <View style={styles.centerActionWrapper}>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => navigation.navigate('CameraScreen')}
-          style={styles.scanButtonTouch}
-        >
-          <View style={styles.scanGreenCircle}>
-            <Camera size={23} color="#FFFFFF" strokeWidth={2.4} />
-          </View>
-          <Text style={[styles.scanLabel, { color: WA_COLORS.green }]}>Scan</Text>
-        </TouchableOpacity>
+              {/* WhatsApp Tab Label */}
+              <Text
+                style={[
+                  styles.tabLabel,
+                  {
+                    color: isFocused ? activeTextColor : mutedColor,
+                    fontWeight: isFocused ? '700' : '500',
+                  },
+                ]}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
-
-      {/* Right-Center Tab: Tools */}
-      {(() => {
-        const tab = tabs[2];
-        const isFocused = state.index === tab.index;
-        const IconComponent = tab.icon;
-
-        return (
-          <TouchableOpacity
-            key={tab.name}
-            activeOpacity={0.7}
-            onPress={() => {
-              if (!isFocused) navigation.navigate(tab.name);
-            }}
-            style={styles.tabItem}
-          >
-            <View style={[styles.pillWrapper, isFocused && { backgroundColor: pillBg }]}>
-              <IconComponent
-                size={22}
-                color={isFocused ? activeIconColor : mutedColor}
-                strokeWidth={isFocused ? 2.4 : 1.9}
-              />
-            </View>
-            <Text
-              style={[
-                styles.tabLabel,
-                {
-                  color: isFocused ? activeTextColor : mutedColor,
-                  fontWeight: isFocused ? '700' : '500',
-                },
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })()}
-
-      {/* Right Tab: Settings */}
-      {(() => {
-        const tab = tabs[3];
-        const isFocused = state.index === tab.index;
-        const IconComponent = tab.icon;
-
-        return (
-          <TouchableOpacity
-            key={tab.name}
-            activeOpacity={0.7}
-            onPress={() => {
-              if (!isFocused) navigation.navigate(tab.name);
-            }}
-            style={styles.tabItem}
-          >
-            <View style={[styles.pillWrapper, isFocused && { backgroundColor: pillBg }]}>
-              <IconComponent
-                size={22}
-                color={isFocused ? activeIconColor : mutedColor}
-                strokeWidth={isFocused ? 2.4 : 1.9}
-              />
-            </View>
-            <Text
-              style={[
-                styles.tabLabel,
-                {
-                  color: isFocused ? activeTextColor : mutedColor,
-                  fontWeight: isFocused ? '700' : '500',
-                },
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })()}
     </View>
   );
 };
@@ -254,7 +161,6 @@ export const BottomTabs = () => {
     >
       <Tab.Screen name="HomeTab" component={HomeScreen} />
       <Tab.Screen name="DocumentsTab" component={DocumentsScreen} />
-      <Tab.Screen name="ScanTab" component={DummyScanScreen} />
       <Tab.Screen name="ToolsTab" component={PdfToolsScreen} />
       <Tab.Screen name="SettingsTab" component={SettingsScreen} />
     </Tab.Navigator>
@@ -262,11 +168,30 @@ export const BottomTabs = () => {
 };
 
 const styles = StyleSheet.create({
-  barContainer: {
+  rootWrapper: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
+  },
+  // WhatsApp Signature FAB
+  fabButton: {
+    position: 'absolute',
+    right: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 18, // WhatsApp Material 3 squircle FAB shape
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    zIndex: 10,
+  },
+  // Flat WhatsApp Bottom Navigation Bar
+  barContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -288,48 +213,19 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 2,
   },
-  // WhatsApp Iconic Rounded Pill Capsule around active tab icon
+  // WhatsApp Material 3 Pill Capsule (64x32dp, borderRadius 16)
   pillWrapper: {
-    width: 56,
-    height: 30,
-    borderRadius: 15,
+    width: 64,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabLabel: {
-    fontSize: 11,
-    marginTop: 3,
-    letterSpacing: -0.1,
-  },
-  // WhatsApp Center Quick Scan Button
-  centerActionWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scanButtonTouch: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: -8, // Subtle elevation above the bar
-  },
-  scanGreenCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: WA_COLORS.green,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: WA_COLORS.green,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  scanLabel: {
-    fontSize: 10.5,
-    fontWeight: '700',
-    marginTop: 2,
+    fontSize: 12,
+    marginTop: 4,
     letterSpacing: 0.2,
   },
 });
