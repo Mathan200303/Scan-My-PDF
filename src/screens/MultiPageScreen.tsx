@@ -143,8 +143,14 @@ export const MultiPageScreen: React.FC<{ navigation: any; route: any }> = ({
       // Optionally show Interstitial Ad
       AdService.showInterstitial();
 
-      // Open in document viewer
-      navigation.replace('DocumentViewer', { document: docItem });
+      // Open in document viewer with clean stack (so going back goes directly to MainTabs in one tap)
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'MainTabs' },
+          { name: 'DocumentViewer', params: { document: docItem } },
+        ],
+      });
     } catch (e: any) {
       setLoading(false);
       console.error('PDF creation error', e);

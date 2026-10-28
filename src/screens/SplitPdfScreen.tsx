@@ -94,7 +94,13 @@ export const SplitPdfScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       await DocumentRepository.save(splitItem);
       setLoading(false);
 
-      navigation.replace('DocumentViewer', { document: splitItem });
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'MainTabs' },
+          { name: 'DocumentViewer', params: { document: splitItem } },
+        ],
+      });
     } catch (e: any) {
       setLoading(false);
       console.error('Split error', e);

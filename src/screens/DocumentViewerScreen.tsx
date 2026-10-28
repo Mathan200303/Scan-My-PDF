@@ -10,6 +10,7 @@ import {
   Dimensions,
   TextInput,
   Modal,
+  BackHandler,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -107,7 +108,7 @@ export const DocumentViewerScreen: React.FC<{ navigation: any; route: any }> = (
           style: 'destructive',
           onPress: async () => {
             await DocumentRepository.delete(document.id);
-            navigation.goBack();
+            handleBack();
           },
         },
       ]
@@ -142,12 +143,25 @@ export const DocumentViewerScreen: React.FC<{ navigation: any; route: any }> = (
     return `file://${raw}`;
   }, [renderedPdfUri, document.thumbnailUri, document.uri, document.type]);
 
+  const handleBack = () => {
+    navigation.navigate('MainTabs');
+  };
+
+  useEffect(() => {
+    const onBackPress = () => {
+      handleBack();
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [navigation]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Header
         title={document.title}
         subtitle={`${document.type.toUpperCase()} • ${FileService.formatFileSize(document.fileSize)}`}
-        onBack={() => navigation.goBack()}
+        onBack={handleBack}
         rightAction={
           <View style={styles.headerActions}>
             <TouchableOpacity

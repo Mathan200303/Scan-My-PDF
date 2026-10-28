@@ -134,7 +134,13 @@ export const MergePdfScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
       await DocumentRepository.save(mergedItem);
       setLoading(false);
 
-      navigation.replace('DocumentViewer', { document: mergedItem });
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'MainTabs' },
+          { name: 'DocumentViewer', params: { document: mergedItem } },
+        ],
+      });
     } catch (e: any) {
       setLoading(false);
       console.error('Merge error', e);

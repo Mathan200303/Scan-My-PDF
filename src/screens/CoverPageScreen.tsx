@@ -157,7 +157,13 @@ export const CoverPageScreen: React.FC<{ navigation: any }> = ({ navigation }) =
       await DocumentRepository.save(resultDoc);
       setLoading(false);
 
-      navigation.replace('DocumentViewer', { document: resultDoc });
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'MainTabs' },
+          { name: 'DocumentViewer', params: { document: resultDoc } },
+        ],
+      });
     } catch (e: any) {
       setLoading(false);
       console.error('Cover generation error', e);

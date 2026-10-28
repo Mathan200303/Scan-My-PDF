@@ -123,7 +123,13 @@ export const WatermarkScreen: React.FC<{ navigation: any }> = ({ navigation }) =
       await DocumentRepository.save(watermarkedDoc);
       setLoading(false);
 
-      navigation.replace('DocumentViewer', { document: watermarkedDoc });
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'MainTabs' },
+          { name: 'DocumentViewer', params: { document: watermarkedDoc } },
+        ],
+      });
     } catch (e: any) {
       setLoading(false);
       console.error('Watermark error', e);

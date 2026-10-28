@@ -146,7 +146,13 @@ export const PageManagerScreen: React.FC<{ navigation: any }> = ({ navigation })
       await DocumentRepository.save(modifiedDoc);
       setLoading(false);
 
-      navigation.replace('DocumentViewer', { document: modifiedDoc });
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'MainTabs' },
+          { name: 'DocumentViewer', params: { document: modifiedDoc } },
+        ],
+      });
     } catch (e: any) {
       setLoading(false);
       console.error('Modify pages error', e);

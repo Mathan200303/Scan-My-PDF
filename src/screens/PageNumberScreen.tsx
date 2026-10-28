@@ -116,7 +116,13 @@ export const PageNumberScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       await DocumentRepository.save(numberedDoc);
       setLoading(false);
 
-      navigation.replace('DocumentViewer', { document: numberedDoc });
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'MainTabs' },
+          { name: 'DocumentViewer', params: { document: numberedDoc } },
+        ],
+      });
     } catch (e: any) {
       setLoading(false);
       console.error('Page numbers error', e);

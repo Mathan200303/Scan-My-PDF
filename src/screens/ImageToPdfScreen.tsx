@@ -143,7 +143,13 @@ export const ImageToPdfScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       await DocumentRepository.save(docItem);
       setLoading(false);
 
-      navigation.replace('DocumentViewer', { document: docItem });
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'MainTabs' },
+          { name: 'DocumentViewer', params: { document: docItem } },
+        ],
+      });
     } catch (e: any) {
       setLoading(false);
       console.error('PDF export error', e);
